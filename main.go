@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 )
@@ -19,6 +21,11 @@ var books []Book
 func main() {
 	router := mux.NewRouter()
 
+	books = append(books,
+		Book{ID: 1, Title: "Go Lang Pointers", Author: "MR. Go Lang", Year: "2010"},
+		Book{ID: 2, Title: "Go Lang History", Author: "MR. Go Lang", Year: "2009"},
+	)
+
 	router.HandleFunc("/books", getBooks).Methods("GET")
 	router.HandleFunc("/books/{id}", getBook).Methods("GET")
 	router.HandleFunc("/books", addBook).Methods("POST")
@@ -30,10 +37,18 @@ func main() {
 
 func getBooks(w http.ResponseWriter, r *http.Request) {
 	log.Println("You got books")
+	json.NewEncoder(w).Encode(books)
 }
 
 func getBook(w http.ResponseWriter, r *http.Request) {
-	log.Println("You got a book")
+	params := mux.Vars(r)
+
+	id, _ := strconv.Atoi(params["id"])
+	for _, book := range books {
+		if book.ID == id {
+			json.NewEncoder(w).Encode(&book)
+		}
+	}
 }
 
 func updateBook(w http.ResponseWriter, r *http.Request) {
