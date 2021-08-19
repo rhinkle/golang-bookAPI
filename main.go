@@ -43,7 +43,7 @@ func main() {
 }
 
 func healthCheckHandler(w http.ResponseWriter, r *http.Request) {
-	var resp = HealthCheck{
+	resp := HealthCheck{
 		Status: "Up",
 		Time:   time.Now(),
 	}
