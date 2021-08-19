@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
 )
@@ -14,6 +15,11 @@ type Book struct {
 	Title  string `json:title`
 	Author string `json:author`
 	Year   string `json:year`
+}
+
+type HealthCheck struct {
+	Status string    `json:status`
+	Time   time.Time `json:time`
 }
 
 var books []Book
@@ -31,8 +37,17 @@ func main() {
 	router.HandleFunc("/books", addBook).Methods("POST")
 	router.HandleFunc("/books", updateBook).Methods("PUT")
 	router.HandleFunc("/books/{id}", removeBook).Methods("DELETE")
+	router.HandleFunc("/health", healthCheckHandler).Methods("GET")
 
 	log.Fatal(http.ListenAndServe(":8000", router))
+}
+
+func healthCheckHandler(w http.ResponseWriter, r *http.Request) {
+	var resp = HealthCheck{
+		Status: "Up",
+		Time:   time.Now(),
+	}
+	json.NewEncoder(w).Encode(resp)
 }
 
 func getBooks(w http.ResponseWriter, r *http.Request) {
