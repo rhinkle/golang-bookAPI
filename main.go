@@ -43,6 +43,7 @@ func main() {
 }
 
 func healthCheckHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type", "application/json")
 	resp := HealthCheck{
 		Status: "Up",
 		Time:   time.Now(),
@@ -51,12 +52,13 @@ func healthCheckHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func getBooks(w http.ResponseWriter, r *http.Request) {
-	log.Println("You got books")
+	w.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(books)
 }
 
 func getBook(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
+	w.Header().Add("Content-Type", "application/json")
 
 	id, _ := strconv.Atoi(params["id"])
 	for _, book := range books {
@@ -75,5 +77,12 @@ func removeBook(w http.ResponseWriter, r *http.Request) {
 }
 
 func addBook(w http.ResponseWriter, r *http.Request) {
-	log.Println("You got books")
+	var book Book
+
+	json.NewDecoder(r.Body).Decode(&book)
+
+	books = append(books, book)
+
+	w.Header().Add("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(books)
 }
