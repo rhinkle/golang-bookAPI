@@ -57,8 +57,8 @@ func getBooks(w http.ResponseWriter, r *http.Request) {
 }
 
 func getBook(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
 	w.Header().Add("Content-Type", "application/json")
+	params := mux.Vars(r)
 
 	id, _ := strconv.Atoi(params["id"])
 	for _, book := range books {
@@ -69,20 +69,35 @@ func getBook(w http.ResponseWriter, r *http.Request) {
 }
 
 func updateBook(w http.ResponseWriter, r *http.Request) {
-	log.Println("You updated a book")
+	w.Header().Add("Content-Type", "application/json")
+	var book Book
+	json.NewDecoder(r.Body).Decode(&book)
+
+	for i, item := range books {
+		if item.ID == book.ID {
+			books[i] = book
+		}
+	}
+	json.NewEncoder(w).Encode(books)
 }
 
 func removeBook(w http.ResponseWriter, r *http.Request) {
-	log.Println("You got books")
+	w.Header().Add("Content-Type", "application/json")
+	params := mux.Vars(r)
+	id, _ := strconv.Atoi(params["id"])
+
+	for i, item := range books {
+		if item.ID == id {
+			books = append(books[:i], books[i+1:]...)
+		}
+	}
 }
 
 func addBook(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type", "application/json")
 	var book Book
-
 	json.NewDecoder(r.Body).Decode(&book)
 
 	books = append(books, book)
-
-	w.Header().Add("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(books)
+	w.WriteHeader(201)
 }
