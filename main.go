@@ -14,10 +14,10 @@ import (
 )
 
 type Book struct {
-	ID     int
-	Title  string
-	Author string
-	Year   string
+	ID     int    `json:id`
+	Title  string `json:title`
+	Author string `json:author`
+	Year   string `json:year`
 }
 
 type HealthCheck struct {
@@ -51,7 +51,7 @@ func main() {
 	router := mux.NewRouter()
 	router.HandleFunc("/books", getBooks).Methods("GET")
 	router.HandleFunc("/books/{id}", getBook).Methods("GET")
-	// router.HandleFunc("/books", addBook).Methods("POST")
+	router.HandleFunc("/books", addBook).Methods("POST")
 	// router.HandleFunc("/books", updateBook).Methods("PUT")
 	// router.HandleFunc("/books/{id}", removeBook).Methods("DELETE")
 	router.HandleFunc("/health", healthCheckHandler).Methods("GET")
@@ -92,4 +92,22 @@ func getBook(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(book)
+}
+
+func addBook(w http.ResponseWriter, r *http.Request) {
+	var book Book
+	var bookID int
+
+	json.NewDecoder(r.Body).Decode(&book)
+	sql := `
+		INSERT INTO book ("Title", "Author", "Year")
+		VALUES ($1, $2, $3)
+		RETURNING "ID";
+	`
+	err := db.QueryRow(sql, book.Title, book.Author, book.Year).Scan(&bookID)
+	logFatal(err)
+
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(201)
+	json.NewEncoder(w).Encode(bookID)
 }
