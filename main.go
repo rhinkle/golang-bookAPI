@@ -14,15 +14,15 @@ import (
 )
 
 type Book struct {
-	ID     int    `json:id`
-	Title  string `json:title`
-	Author string `json:author`
-	Year   string `json:year`
+	ID     int
+	Title  string
+	Author string
+	Year   string
 }
 
 type HealthCheck struct {
-	Status string    `json:status`
-	Time   time.Time `json:time`
+	Status string
+	Time   time.Time
 }
 
 var books []Book
@@ -50,7 +50,7 @@ func main() {
 
 	router := mux.NewRouter()
 	router.HandleFunc("/books", getBooks).Methods("GET")
-	// router.HandleFunc("/books/{id}", getBook).Methods("GET")
+	router.HandleFunc("/books/{id}", getBook).Methods("GET")
 	// router.HandleFunc("/books", addBook).Methods("POST")
 	// router.HandleFunc("/books", updateBook).Methods("PUT")
 	// router.HandleFunc("/books/{id}", removeBook).Methods("DELETE")
@@ -79,4 +79,17 @@ func getBooks(w http.ResponseWriter, r *http.Request) {
 		books = append(books, book)
 	}
 	json.NewEncoder(w).Encode(books)
+}
+
+func getBook(w http.ResponseWriter, r *http.Request) {
+	var book Book
+	params := mux.Vars(r)
+
+	rows := db.QueryRow(`SELECT * FROM book WHERE "ID" = $1`, params["id"])
+
+	err := rows.Scan(&book.ID, &book.Title, &book.Author, &book.Year)
+	logFatal(err)
+
+	w.Header().Add("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(book)
 }
