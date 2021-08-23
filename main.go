@@ -52,7 +52,7 @@ func main() {
 	router.HandleFunc("/books", getBooks).Methods("GET")
 	router.HandleFunc("/books/{id}", getBook).Methods("GET")
 	router.HandleFunc("/books", addBook).Methods("POST")
-	// router.HandleFunc("/books", updateBook).Methods("PUT")
+	router.HandleFunc("/books", updateBook).Methods("PUT")
 	// router.HandleFunc("/books/{id}", removeBook).Methods("DELETE")
 	router.HandleFunc("/health", healthCheckHandler).Methods("GET")
 
@@ -110,4 +110,20 @@ func addBook(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(201)
 	json.NewEncoder(w).Encode(bookID)
+}
+
+func updateBook(w http.ResponseWriter, r *http.Request) {
+	var book Book
+	json.NewDecoder(r.Body).Decode(&book)
+	updateSql := `
+		UPDATE book SET "Title"=$1, "Author"=$2, "Year"=$3 
+		WHERE "ID"=$4 
+		RETURNING "ID";
+	`
+	result, err := db.Exec(updateSql, &book.Title, &book.Author, &book.Year, &book.ID)
+	rowsUpdated, err := result.RowsAffected()
+	logFatal(err)
+
+	w.Header().Add("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(rowsUpdated)
 }
