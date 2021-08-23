@@ -53,7 +53,7 @@ func main() {
 	router.HandleFunc("/books/{id}", getBook).Methods("GET")
 	router.HandleFunc("/books", addBook).Methods("POST")
 	router.HandleFunc("/books", updateBook).Methods("PUT")
-	// router.HandleFunc("/books/{id}", removeBook).Methods("DELETE")
+	router.HandleFunc("/books/{id}", removeBook).Methods("DELETE")
 	router.HandleFunc("/health", healthCheckHandler).Methods("GET")
 
 	log.Fatal(http.ListenAndServe(":8000", router))
@@ -92,6 +92,18 @@ func getBook(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(book)
+}
+
+func removeBook(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+
+	result, err := db.Exec(`DELETE FROM book WHERE "ID" = $1`, params["id"])
+	logFatal(err)
+
+	rowsDeleted, err := result.RowsAffected()
+
+	w.WriteHeader(200)
+	json.NewEncoder(w).Encode(rowsDeleted)
 }
 
 func addBook(w http.ResponseWriter, r *http.Request) {
