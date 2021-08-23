@@ -1,6 +1,8 @@
 package main
 
 import (
+	"database/sql"
+	"encoding/json"
 	"log"
 	"net/http"
 	"os"
@@ -24,6 +26,7 @@ type HealthCheck struct {
 }
 
 var books []Book
+var db *sql.DB
 
 func init() {
 	gotenv.Load()
@@ -38,14 +41,19 @@ func logFatal(err error) {
 func main() {
 	pgUrl, err := pq.ParseURL(os.Getenv("DB_URL"))
 	logFatal(err)
-	log.Println(pgUrl)
+
+	db, err = sql.Open("postgres", pgUrl)
+	logFatal(err)
+
+	err = db.Ping()
+	logFatal(err)
 
 	router := mux.NewRouter()
 	router.HandleFunc("/books", getBooks).Methods("GET")
-	router.HandleFunc("/books/{id}", getBook).Methods("GET")
-	router.HandleFunc("/books", addBook).Methods("POST")
-	router.HandleFunc("/books", updateBook).Methods("PUT")
-	router.HandleFunc("/books/{id}", removeBook).Methods("DELETE")
+	// router.HandleFunc("/books/{id}", getBook).Methods("GET")
+	// router.HandleFunc("/books", addBook).Methods("POST")
+	// router.HandleFunc("/books", updateBook).Methods("PUT")
+	// router.HandleFunc("/books/{id}", removeBook).Methods("DELETE")
 	router.HandleFunc("/health", healthCheckHandler).Methods("GET")
 
 	log.Fatal(http.ListenAndServe(":8000", router))
@@ -57,24 +65,18 @@ func healthCheckHandler(w http.ResponseWriter, r *http.Request) {
 
 func getBooks(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
-}
+	var book Book
+	books = []Book{}
 
-func getBook(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Content-Type", "application/json")
+	rows, err := db.Query("select * from book")
+	logFatal(err)
 
-}
+	defer rows.Close()
+	for rows.Next() {
+		err := rows.Scan(&book.ID, &book.Title, &book.Author, &book.Year)
+		logFatal(err)
 
-func updateBook(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Content-Type", "application/json")
-
-}
-
-func removeBook(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Content-Type", "application/json")
-
-}
-
-func addBook(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Content-Type", "application/json")
-
+		books = append(books, book)
+	}
+	json.NewEncoder(w).Encode(books)
 }
