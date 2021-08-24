@@ -4,6 +4,7 @@ import (
 	"book-list/controllers"
 	"book-list/driver"
 	"book-list/models"
+	bookRepository "book-list/repository/book"
 	"book-list/utils"
 	"database/sql"
 	"encoding/json"
@@ -60,22 +61,17 @@ func removeBook(w http.ResponseWriter, r *http.Request) {
 
 func addBook(w http.ResponseWriter, r *http.Request) {
 	var book models.Book
-	var bookID int
+	var cError models.Error
 
 	err := json.NewDecoder(r.Body).Decode(&book)
 	utils.LogFatal(err)
 
-	sql := `
-		INSERT INTO book ("Title", "Author", "Year")
-		VALUES ($1, $2, $3)
-		RETURNING "ID";
-	`
-	err = db.QueryRow(sql, book.Title, book.Author, book.Year).Scan(&bookID)
-	utils.LogFatal(err)
+	err = bookRepository.BookRepository{}.AddBook(db, book)
 
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(201)
-	json.NewEncoder(w).Encode(bookID)
+	if err != nil {
+		utils.SendError(w, http.StatusInternalServerError, cError)
+	}
+	utils.SendSuccess(w, nil, http.StatusCreated)
 }
 
 func updateBook(w http.ResponseWriter, r *http.Request) {

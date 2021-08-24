@@ -43,4 +43,22 @@ func (b BookRepository) GetBook(db *sql.DB, book models.Book, bookID string) (mo
 	return book, nil
 }
 
+func (b BookRepository) AddBook(db *sql.DB, book models.Book) (error)  {
+	var bookID int
+
+	addBookSQL := `
+		INSERT INTO book ("Title", "Author", "Year")
+		VALUES ($1, $2, $3)
+		RETURNING "ID";
+	`
+	err := db.QueryRow(addBookSQL, book.Title, book.Author, book.Year).Scan(&bookID)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+
 
